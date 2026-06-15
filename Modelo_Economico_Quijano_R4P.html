@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modelo Económico R4P — Rancho Quijano</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;background:#f4f4f2;color:#1a1a1a}
+#app{max-width:1100px;margin:0 auto;padding:16px}
+
+/* Header */
+.hdr{background:#1F4E79;color:#fff;padding:14px 20px;border-radius:8px 8px 0 0;display:flex;justify-content:space-between;align-items:center}
+.hdr h1{font-size:16px;font-weight:600;letter-spacing:.5px}
+.hdr-sub{font-size:11px;opacity:.75;margin-top:2px}
+.hdr-date{font-size:11px;opacity:.75;text-align:right}
+
+/* Nav */
+nav{display:flex;gap:0;background:#163d5e;border-radius:0;overflow:hidden}
+nav button{background:transparent;border:none;color:#a8c4d8;padding:9px 16px;font-size:12px;cursor:pointer;border-right:1px solid #1F4E79;white-space:nowrap;transition:background .15s}
+nav button:hover{background:#1F4E79;color:#fff}
+nav button.active{background:#2E75B6;color:#fff;font-weight:600}
+
+/* Sections */
+.section{display:none;padding:0;background:#fff;border-radius:0 0 8px 8px;border:1px solid #d0d0d0;border-top:none}
+.section.active{display:block}
+.sec-body{padding:16px 18px}
+
+/* Section title */
+.stitle{font-size:13px;font-weight:700;color:#1F4E79;text-transform:uppercase;letter-spacing:.5px;padding:10px 18px 8px;border-bottom:2px solid #2E75B6;background:#f0f5fa}
+
+/* Tables */
+table{width:100%;border-collapse:collapse;margin-bottom:16px}
+thead tr{background:#1F4E79;color:#fff}
+thead th{padding:7px 10px;text-align:left;font-size:12px;font-weight:600}
+thead th.r{text-align:right}
+tbody tr:nth-child(even){background:#fafafa}
+tbody tr:hover{background:#f0f5fa}
+td{padding:5px 10px;border-bottom:1px solid #e8e8e8;vertical-align:middle}
+td.r{text-align:right}
+td.c{text-align:center}
+
+/* Row types */
+tr.row-div{background:#dce8f5!important;font-weight:700}
+tr.row-div td{color:#1F4E79;padding:7px 10px;border-top:2px solid #2E75B6}
+tr.row-sub{background:#e8f0f8!important}
+tr.row-sub td{color:#163d5e;font-weight:600}
+tr.row-total{background:#1F4E79!important}
+tr.row-total td{color:#fff!important;font-weight:700;font-size:13px;padding:8px 10px}
+tr.row-warn{background:#fff8e1!important}
+tr.row-warn td{color:#7a5200}
+tr.row-red{background:#fde8e8!important}
+tr.row-red td{color:#7a0000}
+tr.row-green{background:#e8f5e9!important}
+tr.row-green td{color:#1b5e20}
+
+/* Input cells */
+.inp{background:#fffde7;border:1px solid #f0c000;border-radius:3px;padding:2px 4px;width:100%;text-align:right;font-size:12px;font-family:inherit;color:#1a1a1a}
+.inp:focus{outline:2px solid #2E75B6;background:#fff9c4}
+.inp-note{font-size:10px;color:#c0780a;margin-left:4px}
+
+/* Calculated values */
+.cv{font-weight:600}
+.pos{color:#1b5e20}.neg{color:#b71c1c}.neu{color:#0d47a1}
+.pct-good{color:#1b5e20;font-weight:700}
+.pct-warn{color:#e65100;font-weight:700}
+.pct-bad{color:#b71c1c;font-weight:700}
+
+/* KPI cards */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px}
+.kpi-card{background:#f0f5fa;border:1px solid #c5d8ec;border-radius:6px;padding:12px 14px}
+.kpi-card.warn{background:#fff8e1;border-color:#f0c000}
+.kpi-card.danger{background:#fde8e8;border-color:#e57373}
+.kpi-card.good{background:#e8f5e9;border-color:#81c784}
+.kpi-lbl{font-size:11px;color:#555;margin-bottom:4px}
+.kpi-val{font-size:20px;font-weight:700;color:#1F4E79}
+.kpi-card.warn .kpi-val{color:#7a5200}
+.kpi-card.danger .kpi-val{color:#7a0000}
+.kpi-card.good .kpi-val{color:#1b5e20}
+.kpi-bench{font-size:10px;color:#777;margin-top:2px}
+
+/* Benchmark bars */
+.bench-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.bench-lbl{font-size:12px;color:#333;min-width:170px}
+.bench-bg{flex:1;background:#e0e0e0;border-radius:4px;height:12px;overflow:hidden}
+.bench-fill{height:100%;border-radius:4px;transition:width .3s}
+.bench-val{font-size:12px;font-weight:700;min-width:80px;text-align:right}
+.bench-tgt{font-size:11px;color:#888;min-width:60px}
+
+/* Alert box */
+.alert{border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px}
+.alert-warn{background:#fff8e1;border:1px solid #f0c000;color:#7a5200}
+.alert-danger{background:#fde8e8;border:1px solid #e57373;color:#7a0000}
+.alert-info{background:#e3f2fd;border:1px solid #90caf9;color:#0d47a1}
+.alert-good{background:#e8f5e9;border:1px solid #81c784;color:#1b5e20}
+
+/* Flujo table colors */
+.mes-pos{background:#e8f5e9;color:#1b5e20;font-weight:600}
+.mes-neg{background:#fde8e8;color:#b71c1c;font-weight:600}
+.mes-zero{background:#f5f5f5;color:#555}
+.flujo-th{background:#2E75B6!important;font-size:11px}
+
+/* Section note */
+.snote{font-size:11px;color:#888;font-style:italic;padding:6px 10px;border-top:1px solid #e0e0e0;margin-top:4px}
+
+/* Legend */
+.legend{display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#555}
+.leg-box{width:14px;height:14px;border-radius:2px}
+
+/* Two-column layout */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:700px){.two-col{grid-template-columns:1fr}}
+
+.sub-section{margin-bottom:18px}
+.sub-title{font-size:12px;font-weight:700;color:#2E75B6;margin:10px 0 6px;text-transform:uppercase;letter-spacing:.3px}
+
+hr.sep{border:none;border-top:1px solid #e0e0e0;margin:16px 0}
+</style>
+</head>
+<body>
+<div id="app">
+
+<div class="hdr">
+  <div>
+    <div class="h1">MODELO ECONÓMICO R4P — RANCHO QUIJANO</div>
+    <div class="hdr-sub">Javier Eugenio Quijano Ferrara · Lampazos de Naranjo, NL · 2,272 Ha · Metodología Ranching for Profit</div>
+  </div>
+  <div class="hdr-date">Año modelo: <strong id="anio-display">2026</strong><br>Consultor: Fausto — R4Numbers<br>v1.0 · 15-jun-2026</div>
+</div>
+
+<nav>
+  <button class="active" onclick="showTab('dashboard')">⬛ Dashboard</button>
+  <button onclick="showTab('modelo')">📊 Modelo P&L</button>
+  <button onclick="showTab('gastos')">📋 Gastos</button>
+  <button onclick="showTab('flujo')">💰 Flujo Efectivo</button>
+  <button onclick="showTab('inventario')">🐄 Inventario</button>
+  <button onclick="showTab('kpis')">📏 KPIs</button>
+  <button onclick="showTab('proyecto')" style="background:#C55A11;color:#fff;border-right:none">📌 Proyecto</button>
+</nav>
+
+<!-- ============================================================ DASHBOARD ============================================================ -->
+<div id="tab-dashboard" class="section active">
+<div class="stitle">RESUMEN EJECUTIVO</div>
+<div class="sec-body">
+
+  <div class="kpi-grid">
+    <div class="kpi-card" id="kpi-pb"><div class="kpi-lbl">Producto Bruto</div><div class="kpi-val" id="kpi-pb-val">—</div><div class="kpi-bench">Total ingresos del negocio</div></div>
+    <div class="kpi-card" id="kpi-mb"><div class="kpi-lbl">Margen Bruto</div><div class="kpi-val" id="kpi-mb-val">—</div><div class="kpi-bench">Benchmark ≥ 70% del PB</div></div>
+    <div class="kpi-card" id="kpi-cf"><div class="kpi-lbl">Costos Fijos</div><div class="kpi-val" id="kpi-cf-val">—</div><div class="kpi-bench">Benchmark ≤ 40% del PB</div></div>
+    <div class="kpi-card" id="kpi-util"><div class="kpi-lbl">Utilidad / Pérdida</div><div class="kpi-val" id="kpi-util-val">—</div><div class="kpi-bench">Benchmark ≥ 30¢ por peso</div></div>
+    <div class="kpi-card" id="kpi-roa"><div class="kpi-lbl">ROA</div><div class="kpi-val" id="kpi-roa-val">—</div><div class="kpi-bench">Benchmark ≥ 10%</div></div>
+    <div class="kpi-card" id="kpi-pe"><div class="kpi-lbl">Punto de Equilibrio</div><div class="kpi-val" id="kpi-pe-val">—</div><div class="kpi-bench">% de ingresos para cubrir costos</div></div>
+  </div>
+
+  <div id="alert-main" class="alert alert-danger" style="margin-bottom:14px"></div>
+
+  <div class="sub-title">Distancia a benchmarks R4P (empresa del 20% superior)</div>
+
+  <div style="margin-bottom:16px">
+    <div class="bench-row">
+      <span class="bench-lbl">CD / Producto Bruto</span>
+      <div class="bench-bg"><div class="bench-fill" id="bar-cd" style="background:#E24B4A"></div></div>
+      <span class="bench-val" id="bv-cd">—</span>
+      <span class="bench-tgt">Meta ≤ 30%</span>
+    </div>
+    <div class="bench-row">
+      <span class="bench-lbl">CF / Producto Bruto</span>
+      <div class="bench-bg"><div class="bench-fill" id="bar-cf" style="background:#E24B4A"></div></div>
+      <span class="bench-val" id="bv-cf">—</span>
+      <span class="bench-tgt">Meta ≤ 40%</span>
+    </div>
+    <div class="bench-row">
+      <span class="bench-lbl">Margen Bruto / PB</span>
+      <div class="bench-bg"><div class="bench-fill" id="bar-mb" style="background:#639922"></div></div>
+      <span class="bench-val" id="bv-mb">—</span>
+      <span class="bench-tgt">Meta ≥ 70%</span>
+    </div>
+    <div class="bench-row">
+      <span class="bench-lbl">Utilidad / PB</span>
+      <div class="bench-bg"><div class="bench-fill" id="bar-util" style="background:#639922"></div></div>
+      <span class="bench-val" id="bv-util">—</span>
+      <span class="bench-tgt">Meta ≥ 30%</span>
+    </div>
+    <div class="bench-row">
+      <span class="bench-lbl">ROA</span>
+      <div class="bench-bg"><div class="bench-fill" id="bar-roa" style="background:#639922"></div></div>
+      <span class="bench-val" id="bv-roa">—</span>
+      <span class="bench-tgt">Meta ≥ 10%</span>
+    </div>
+  </div>
+
+  <table>
+    <thead><tr><th>Estado de Resultados</th><th class="r">Monto MXP</th><th class="r">% del PB</th><th class="r">Benchmark R4P</th></tr></thead>
+    <tbody>
+      <tr><td>(+) Producto Bruto</td><td class="r cv" id="sum-pb">—</td><td class="r">100.0%</td><td class="r">—</td></tr>
+      <tr><td style="padding-left:20px">División Cría Comercial Brangus</td><td class="r cv" id="sum-pb-cria">—</td><td class="r" id="sum-pb-cria-pct">—</td><td class="r"></td></tr>
+      <tr><td style="padding-left:20px">División Genética / Pie de Cría</td><td class="r cv" id="sum-pb-gen">—</td><td class="r" id="sum-pb-gen-pct">—</td><td class="r"></td></tr>
+      <tr><td style="padding-left:20px">División Forraje (excedente)</td><td class="r cv" id="sum-pb-forr">—</td><td class="r" id="sum-pb-forr-pct">—</td><td class="r"></td></tr>
+      <tr><td style="padding-left:20px">División Lidia</td><td class="r cv" id="sum-pb-lidia">—</td><td class="r" id="sum-pb-lidia-pct">—</td><td class="r"></td></tr>
+      <tr class="row-sub"><td>(-) Costos Directos Totales</td><td class="r cv" id="sum-cd">—</td><td class="r cv" id="sum-cd-pct">—</td><td class="r" style="color:#fff8">≤ 30%</td></tr>
+      <tr class="row-div"><td>(=) Margen Bruto</td><td class="r cv" id="sum-mb">—</td><td class="r cv" id="sum-mb-pct">—</td><td class="r" style="color:#fff8">≥ 70%</td></tr>
+      <tr class="row-sub"><td>(-) Costos Fijos Totales</td><td class="r cv" id="sum-cf">—</td><td class="r cv" id="sum-cf-pct">—</td><td class="r" style="color:#fff8">≤ 40%</td></tr>
+      <tr class="row-total"><td>(=) UTILIDAD / PÉRDIDA NETA</td><td class="r cv" id="sum-util">—</td><td class="r cv" id="sum-util-pct">—</td><td class="r">≥ 30%</td></tr>
+    </tbody>
+  </table>
+  <div class="snote">⚠ Celdas en amarillo = datos a confirmar con el cliente. Celdas calculadas en gris = fórmulas automáticas. Precio de venta actual estimado en $35/kg — revisar en primera reunión.</div>
+</div>
+</div>
+
+<!-- ============================================================ MODELO P&L ============================================================ -->
+<div id="tab-modelo" class="section">
+<div class="stitle">MODELO ECONÓMICO POR DIVISIÓN</div>
+<div class="sec-body">
+
+  <div class="legend">
+    <div class="leg-item"><div class="leg-box" style="background:#fffde7;border:1px solid #f0c000"></div> Dato a confirmar (input)</div>
+    <div class="leg-item"><div class="leg-box" style="background:#e8f5e9;border:1px solid #81c784"></div> Calculado automático</div>
+    <div class="leg-item"><div class="leg-box" style="background:#fde8e8;border:1px solid #e57373"></div> Alerta / madera seca</div>
+  </div>
+
+  <!-- DIV 1: CRÍA COMERCIAL -->
+  <div class="sub-section">
+    <div class="sub-title">División 1 — Cría Comercial Brangus</div>
+    <table>
+      <thead><tr><th>Concepto</th><th class="r">Valor / Unidad</th><th class="r">Resultado MXP</th><th>Nota</th></tr></thead>
+      <tbody>
+        <tr><td>Vacas vientre comerciales</td><td class="r"><input class="inp" type="number" id="v_vacas" value="147" min="0" step="1"> cab</td><td></td><td>Brangus comercial</td></tr>
+        <tr><td>% Parición</td><td class="r"><input class="inp" type="number" id="v_paricion" value="65" min="0" max="100" step="1"> %</td><td></td><td class="inp-note">⚠ confirmar con capataz</td></tr>
+        <tr class="row-sub"><td>Becerros destetados estimados</td><td class="r cv" id="c_becerros">—</td><td></td><td>vacas × % parición</td></tr>
+        <tr><td>Machos vendidos</td><td class="r"><input class="inp" type="number" id="v_machos_vend" value="48" min="0" step="1"> cab</td><td></td><td></td></tr>
+        <tr><td>Peso destete machos (kg)</td><td class="r"><input class="inp" type="number" id="v_peso_m" value="290" min="200" max="400" step="5"> kg</td><td></td><td></td></tr>
+        <tr><td>Precio becerro macho (MXP/kg)</td><td class="r"><input class="inp" type="number" id="v_precio_m" value="35" min="10" step="1"> $/kg</td><td></td><td class="inp-note">⚠ confirmar — mercado ~$80-110</td></tr>
+        <tr class="row-sub"><td>Ingreso machos</td><td></td><td class="r cv" id="c_ing_machos">—</td><td></td></tr>
+        <tr><td>Becerras vendidas</td><td class="r"><input class="inp" type="number" id="v_hembras_vend" value="0" min="0" step="1"> cab</td><td></td><td>Resto se retiene para reemplazo</td></tr>
+        <tr><td>Peso destete hembras (kg)</td><td class="r"><input class="inp" type="number" id="v_peso_h" value="265" min="180" max="360" step="5"> kg</td><td></td><td></td></tr>
+        <tr><td>Precio becerra (MXP/kg)</td><td class="r"><input class="inp" type="number" id="v_precio_h" value="30" min="10" step="1"> $/kg</td><td></td><td></td></tr>
+        <tr class="row-sub"><td>Ingreso hembras</td><td></td><td class="r cv" id="c_ing_hembras">—</td><td></td></tr>
+        <tr><td>Vacas desecho vendidas</td><td class="r"><input class="inp" type="number" id="v_desecho_n" value="0" min="0" step="1"> cab</td><td></td><td>~14% rotación anual = 20 cab</td></tr>
+        <tr><td>Precio vaca desecho (MXP/cab)</td><td class="r"><input class="inp" type="number" id="v_desecho_p" value="12000" min="0" step="500"> $</td><td></td><td></td></tr>
+        <tr class="row-sub"><td>Ingreso vacas desecho</td><td></td><td class="r cv" id="c_ing_desecho">—</td><td></td></tr>
+        <tr class="row-div"><td colspan="2">PRODUCTO BRUTO — Cría Comercial</td><td class="r cv" id="c_pb_cria">—</td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- DIV 2: GENÉTICA -->
+  <div class="sub-section">
+    <div class="sub-title">División 2 — Genética / Pie de Cría (Mayor MB/UA potencial)</div>
+    <table>
+      <thead><tr><th>Concepto</th><th class="r">Valor / Unidad</th><th class="r">Resultado MXP</th><th>Nota</th></tr></thead>
+      <tbody>
+        <tr><td>Vaquillas registro vendidas/año</td><td class="r"><input class="inp" type="number" id="v_vaq_vend" value="0" min="0" step="1"> cab</td><td></td><td>Objetivo año 3: 15-20/año</td></tr>
+        <tr><td>Precio vaquilla registro (MXP)</td><td class="r"><input class="inp" type="number" id="v_vaq_precio" value="50000" min="0" step="5000"> $</td><td></td><td>Rango mercado: $40,000-$80,000</td></tr>
+        <tr><td>Toros registro vendidos/año</td><td class="r"><input class="inp" type="number" id="v_toro_vend" value="0" min="0" step="1"> cab</td><td></td><td></td></tr>
+        <tr><td>Precio toro registro (MXP)</td><td class="r"><input class="inp" type="number" id="v_toro_precio" value="80000" min="0" step="5000"> $</td><td></td><td></td></tr>
+        <tr class="row-div"><td colspan="2">PRODUCTO BRUTO — Genética</td><td class="r cv" id="c_pb_gen">—</td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- DIV 3: FORRAJE -->
+  <div class="sub-section">
+    <div class="sub-title">División 3 — Forraje / Agricultura (actualmente autoconsumo)</div>
+    <table>
+      <thead><tr><th>Concepto</th><th class="r">Valor / Unidad</th><th class="r">Resultado MXP</th><th>Nota</th></tr></thead>
+      <tbody>
+        <tr><td>Hectáreas bajo riego efectivo</td><td class="r"><input class="inp" type="number" id="v_ha_riego" value="87" min="0" step="1"> Ha</td><td></td><td>Side roll + pivote + microasp.</td></tr>
+        <tr><td>Excedente vendible (ton/año)</td><td class="r"><input class="inp" type="number" id="v_forraje_ton" value="0" min="0" step="100"> ton</td><td></td><td>0 = 100% autoconsumo</td></tr>
+        <tr><td>Precio de venta forraje (MXP/ton)</td><td class="r"><input class="inp" type="number" id="v_forraje_precio" value="1500" min="0" step="100"> $</td><td></td><td></td></tr>
+        <tr class="row-div"><td colspan="2">PRODUCTO BRUTO — Forraje</td><td class="r cv" id="c_pb_forr">—</td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- DIV 4: LIDIA -->
+  <div class="sub-section">
+    <div class="sub-title" style="color:#b71c1c">División 4 — Ganadería de Lidia (evaluar madera seca)</div>
+    <div class="alert alert-warn" style="margin-bottom:8px">Aplicar "Buscador de madera seca" (Día 2 escuela R4P). Si el Margen Bruto resulta negativo → reasignar capacidad a Div 1 y Div 2.</div>
+    <table>
+      <thead><tr><th>Concepto</th><th class="r">Valor / Unidad</th><th class="r">Resultado MXP</th><th>Nota</th></tr></thead>
+      <tbody>
+        <tr><td>Ingresos corridas / ventas lidia</td><td class="r"><input class="inp" type="number" id="v_lidia_ing" value="0" min="0" step="10000"> $</td><td></td><td>⚠ dato pendiente</td></tr>
+        <tr class="row-div"><td colspan="2">PRODUCTO BRUTO — Lidia</td><td class="r cv" id="c_pb_lidia">—</td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- RESUMEN P&L -->
+  <div class="sub-section">
+    <div class="sub-title">Resumen Estado de Resultados</div>
+    <table>
+      <thead><tr><th>Concepto</th><th class="r">Monto MXP</th><th class="r">% del PB</th><th class="r">Benchmark R4P</th></tr></thead>
+      <tbody>
+        <tr class="row-sub"><td>(+) Producto Bruto Total</td><td class="r cv" id="m_pb">—</td><td class="r">100.0%</td><td class="r">—</td></tr>
+        <tr><td>(-) Costos Directos (ir a pestaña Gastos)</td><td class="r cv" id="m_cd">—</td><td class="r cv" id="m_cd_pct">—</td><td class="r" style="color:#888">≤ 30%</td></tr>
+        <tr class="row-div"><td>(=) Margen Bruto</td><td class="r cv" id="m_mb">—</td><td class="r cv" id="m_mb_pct">—</td><td class="r" style="color:#fff8">≥ 70%</td></tr>
+        <tr><td>(-) Costos Fijos (ir a pestaña Gastos)</td><td class="r cv" id="m_cf">—</td><td class="r cv" id="m_cf_pct">—</td><td class="r" style="color:#888">≤ 40%</td></tr>
+        <tr class="row-total"><td>(=) UTILIDAD / PÉRDIDA NETA</td><td class="r cv" id="m_util">—</td><td class="r cv" id="m_util_pct">—</td><td class="r">≥ 30%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+</div>
+
+<!-- ============================================================ GASTOS ============================================================ -->
+<div id="tab-gastos" class="section">
+<div class="stitle">DESGLOSE DE GASTOS</div>
+<div class="sec-body">
+
+<div class="two-col">
+  <!-- COSTOS DIRECTOS -->
+  <div>
+    <div class="sub-title">Costos Directos (varían con producción)</div>
+    <table>
+      <thead><tr><th>Concepto</th><th class="r">$/cab/año</th><th class="r">Total Anual</th></tr></thead>
+      <tbody>
+        <tr><td>Mineral (todo el año)</td><td class="r"><input class="inp" type="number" id="g_mineral_cab" value="613" min="0" step="50"> $</td><td class="r cv" id="g_mineral_tot">—</td></tr>
+        <tr><td>Suplemento proteico (7 meses)</td><td class="r"><input class="inp" type="number" id="g_proteico_cab" value="630" min="0" step="50"> $</td><td class="r cv" id="g_proteico_tot">—</td></tr>
+        <tr><td>Reproductivos / hormonas</td><td class="r"><input class="inp" type="number" id="g_reprod_cab" value="1200" min="0" step="100"> $</td><td class="r cv" id="g_reprod_tot">—</td></tr>
+        <tr><td>Sanidad / vacunas</td><td class="r"><input class="inp" type="number" id="g_sanidad_cab" value="600" min="0" step="50"> $</td><td class="r cv" id="g_sanidad_tot">—</td></tr>
+        <tr><td>Fletes ganado (total año)</td><td class="r" colspan="1"><input class="inp" type="number" id="g_fletes" value="50000" min="0" step="5000"> $</td><td class="r cv" id="g_fletes_v">—</td></tr>
+        <tr><td>Mano obra directa ganadera</td><td class="r"><input class="inp" type="number" id="g_mo_directa" value="84000" min="0" step="5000"> $</td><td class="r cv" id="g_mo_directa_v">—</td></tr>
+        <tr><td>Insumos lidia</td><td class="r"><input class="inp" type="number" id="g_lidia_cd" value="0" min="0" step="10000"> $</td><td class="r cv" id="g_lidia_cd_v">—</td></tr>
+        <tr><td>Otros costos directos</td><td class="r"><input class="inp" type="number" id="g_otros_cd" value="0" min="0" step="5000"> $</td><td class="r cv" id="g_otros_cd_v">—</td></tr>
+        <tr class="row-div"><td colspan="2">TOTAL COSTOS DIRECTOS</td><td class="r cv" id="g_cd_total">—</td></tr>
+        <tr class="row-sub"><td colspan="2">CD / Producto Bruto</td><td class="r cv" id="g_cd_pct">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- COSTOS FIJOS -->
+  <div>
+    <div class="sub-title">Costos Fijos (no cambian con producción)</div>
+    <table>
+      <thead><tr><th>Concepto</th><th class="r">Mensual</th><th class="r">Anual</th></tr></thead>
+      <tbody>
+        <tr class="row-sub"><td>NÓMINA (con IMSS patronal)</td><td></td><td></td></tr>
+        <tr><td style="padding-left:16px">Capataz (Guadalupe Mata)</td><td class="r"><input class="inp" type="number" id="g_cap" value="18047" min="0" step="500"> $</td><td class="r cv" id="g_cap_a">—</td></tr>
+        <tr><td style="padding-left:16px">Carpintero (Javier Camacho)</td><td class="r"><input class="inp" type="number" id="g_carp" value="14678" min="0" step="500"> $</td><td class="r cv" id="g_carp_a">—</td></tr>
+        <tr><td style="padding-left:16px">Peones (4 personas)</td><td class="r"><input class="inp" type="number" id="g_peon" value="58713" min="0" step="500"> $</td><td class="r cv" id="g_peon_a">—</td></tr>
+        <tr><td style="padding-left:16px">Personal agrícola</td><td class="r"><input class="inp" type="number" id="g_agri" value="14678" min="0" step="500"> $</td><td class="r cv" id="g_agri_a">—</td></tr>
+        <tr><td style="padding-left:16px">Albañil (Patricio Manríquez)</td><td class="r"><input class="inp" type="number" id="g_alba" value="35568" min="0" step="500"> $</td><td class="r cv" id="g_alba_a">—</td></tr>
+        <tr class="row-sub"><td colspan="2" style="padding-left:8px">Subtotal nómina mensual</td><td class="r cv" id="g_nom_tot_a">—</td></tr>
+        <tr><td>Servicios (luz, agua, internet)</td><td class="r"><input class="inp" type="number" id="g_serv" value="5000" min="0" step="500"> $</td><td class="r cv" id="g_serv_a">—</td></tr>
+        <tr><td>Combustible</td><td class="r"><input class="inp" type="number" id="g_comb" value="15000" min="0" step="1000"> $</td><td class="r cv" id="g_comb_a">—</td></tr>
+        <tr><td>Mantenimiento maquinaria</td><td class="r"><input class="inp" type="number" id="g_mant" value="5000" min="0" step="500"> $</td><td class="r cv" id="g_mant_a">—</td></tr>
+        <tr><td>Intereses crédito Citibanamex</td><td class="r cv" id="g_int_mes">—</td><td class="r cv" id="g_int_a">—</td></tr>
+        <tr><td style="padding-left:16px">— Saldo crédito MXP</td><td colspan="2"><input class="inp" type="number" id="g_deuda" value="397000" min="0" step="10000"> $</td></tr>
+        <tr><td style="padding-left:16px">— Tasa anual %</td><td colspan="2"><input class="inp" type="number" id="g_tasa" value="24" min="0" step="1"> %</td></tr>
+        <tr><td>Dep. maquinaria (anual)</td><td class="r">—</td><td class="r"><input class="inp" type="number" id="g_dep_maq" value="50000" min="0" step="5000"> $</td></tr>
+        <tr><td>Dep. instalaciones (anual)</td><td class="r">—</td><td class="r"><input class="inp" type="number" id="g_dep_inst" value="8000" min="0" step="1000"> $</td></tr>
+        <tr><td>Seguros (ganado + instalaciones)</td><td class="r"><input class="inp" type="number" id="g_seguros" value="0" min="0" step="5000"> $</td><td class="r cv" id="g_seguros_a">—</td></tr>
+        <tr><td>Otros gastos fijos</td><td class="r"><input class="inp" type="number" id="g_otros_cf" value="0" min="0" step="5000"> $</td><td class="r cv" id="g_otros_cf_a">—</td></tr>
+        <tr class="row-div"><td colspan="2">TOTAL COSTOS FIJOS</td><td class="r cv" id="g_cf_total">—</td></tr>
+        <tr class="row-sub"><td colspan="2">CF / Producto Bruto</td><td class="r cv" id="g_cf_pct">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ACTIVOS (para ROA) -->
+<div class="sub-section" style="margin-top:8px">
+  <div class="sub-title">Valor de Activos (para cálculo de ROA)</div>
+  <table>
+    <thead><tr><th>Activo</th><th class="r">Cantidad</th><th class="r">Valor Unitario MXP</th><th class="r">Total MXP</th></tr></thead>
+    <tbody>
+      <tr><td>Tierras (agostadero)</td><td class="r"><input class="inp" type="number" id="a_ha_agost" value="2000" min="0" step="100"> Ha</td><td class="r"><input class="inp" type="number" id="a_val_agost" value="45000" min="0" step="5000"> $/Ha</td><td class="r cv" id="a_agost_tot">—</td></tr>
+      <tr><td>Tierras (riego)</td><td class="r"><input class="inp" type="number" id="a_ha_riego" value="87" min="0" step="10"> Ha</td><td class="r"><input class="inp" type="number" id="a_val_riego" value="80000" min="0" step="5000"> $/Ha</td><td class="r cv" id="a_riego_tot">—</td></tr>
+      <tr><td>Maquinaria y equipo (valor libro)</td><td class="r" colspan="2"><input class="inp" type="number" id="a_maq" value="1500000" min="0" step="100000"> $</td><td class="r cv" id="a_maq_v">—</td></tr>
+      <tr><td>Instalaciones y mejoras</td><td class="r" colspan="2"><input class="inp" type="number" id="a_inst" value="800000" min="0" step="100000"> $</td><td class="r cv" id="a_inst_v">—</td></tr>
+      <tr><td>Ganado reproductor (Vii)</td><td class="r" colspan="2" class="cv" id="a_gan_label">—</td><td class="r cv" id="a_gan_tot">—</td></tr>
+      <tr class="row-div"><td colspan="3">TOTAL ACTIVOS</td><td class="r cv" id="a_total">—</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+</div>
+
+<!-- ============================================================ FLUJO EFECTIVO ============================================================ -->
+<div id="tab-flujo" class="section">
+<div class="stitle">FLUJO DE EFECTIVO — 12 MESES</div>
+<div class="sec-body">
+
+  <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+    <div><label style="font-size:12px;color:#555">Saldo inicial caja (MXP): </label><input class="inp" type="number" id="f_saldo_ini" value="50000" min="0" step="10000" style="width:140px"> $</div>
+    <div><label style="font-size:12px;color:#555">Mes ventas becerros (1-12): </label><input class="inp" type="number" id="f_mes_venta" value="10" min="1" max="12" step="1" style="width:60px"></div>
+    <div><label style="font-size:12px;color:#555">% ventas en ese mes: </label><input class="inp" type="number" id="f_pct_mes" value="80" min="0" max="100" step="5" style="width:60px"> %</div>
+  </div>
+
+  <div style="overflow-x:auto">
+  <table style="min-width:900px">
+    <thead>
+      <tr class="flujo-th">
+        <th>Concepto</th>
+        <th class="r">Ene</th><th class="r">Feb</th><th class="r">Mar</th><th class="r">Abr</th>
+        <th class="r">May</th><th class="r">Jun</th><th class="r">Jul</th><th class="r">Ago</th>
+        <th class="r">Sep</th><th class="r">Oct</th><th class="r">Nov</th><th class="r">Dic</th>
+        <th class="r">Total</th>
+      </tr>
+    </thead>
+    <tbody id="flujo-tbody">
+      <!-- Filled by JS -->
+    </tbody>
+  </table>
+  </div>
+  <div class="snote">La concentración de ventas se puede ajustar arriba. Por defecto 80% en el mes indicado, el 20% restante se distribuye en el mes anterior y posterior.</div>
+</div>
+</div>
+
+<!-- ============================================================ INVENTARIO ============================================================ -->
+<div id="tab-inventario" class="section">
+<div class="stitle">INVENTARIO GANADERO Y UNIDADES ANIMAL</div>
+<div class="sec-body">
+
+  <div class="alert alert-info" style="margin-bottom:12px">UAE = Unidad Animal Equivalente. Estándar R4P para comparar cargas animales. 1 UAE = 1 vaca preñada-seca de 450 kg.</div>
+
+  <table>
+    <thead><tr><th>División / Clase</th><th class="r">Cabezas</th><th class="r">UAE/cab</th><th class="r">UAE Total</th><th class="r">Valor/cab MXP</th><th class="r">Valor Total</th></tr></thead>
+    <tbody>
+      <tr class="row-sub"><td colspan="6">BRANGUS COMERCIAL</td></tr>
+      <tr><td style="padding-left:16px">Vacas vientre comerciales</td><td class="r cv" id="i_vacas_n">147</td><td class="r">1.55</td><td class="r cv" id="i_vacas_uae">—</td><td class="r"><input class="inp" type="number" id="i_vacas_val" value="22000" step="1000"> $</td><td class="r cv" id="i_vacas_tot">—</td></tr>
+      <tr><td style="padding-left:16px">Toros comerciales</td><td class="r"><input class="inp" type="number" id="i_toros_n" value="6" step="1"> cab</td><td class="r">1.50</td><td class="r cv" id="i_toros_uae">—</td><td class="r"><input class="inp" type="number" id="i_toros_val" value="35000" step="1000"> $</td><td class="r cv" id="i_toros_tot">—</td></tr>
+      <tr><td style="padding-left:16px">Vaquillas reemplazo</td><td class="r"><input class="inp" type="number" id="i_vaq_r_n" value="30" step="1"> cab</td><td class="r">0.75</td><td class="r cv" id="i_vaq_r_uae">—</td><td class="r"><input class="inp" type="number" id="i_vaq_r_val" value="16000" step="1000"> $</td><td class="r cv" id="i_vaq_r_tot">—</td></tr>
+      <tr class="row-sub"><td colspan="6">BRANGUS REGISTRO</td></tr>
+      <tr><td style="padding-left:16px">Vacas registro</td><td class="r"><input class="inp" type="number" id="i_vac_reg_n" value="2" step="1"> cab</td><td class="r">1.55</td><td class="r cv" id="i_vac_reg_uae">—</td><td class="r"><input class="inp" type="number" id="i_vac_reg_val" value="35000" step="1000"> $</td><td class="r cv" id="i_vac_reg_tot">—</td></tr>
+      <tr><td style="padding-left:16px">Toro registro</td><td class="r"><input class="inp" type="number" id="i_tor_reg_n" value="1" step="1"> cab</td><td class="r">1.50</td><td class="r cv" id="i_tor_reg_uae">—</td><td class="r"><input class="inp" type="number" id="i_tor_reg_val" value="60000" step="1000"> $</td><td class="r cv" id="i_tor_reg_tot">—</td></tr>
+      <tr class="row-sub"><td colspan="6">OTRAS ESPECIES</td></tr>
+      <tr><td style="padding-left:16px">Piemontese</td><td class="r"><input class="inp" type="number" id="i_piem_n" value="4" step="1"> cab</td><td class="r">1.00</td><td class="r cv" id="i_piem_uae">—</td><td class="r"><input class="inp" type="number" id="i_piem_val" value="18000" step="1000"> $</td><td class="r cv" id="i_piem_tot">—</td></tr>
+      <tr><td style="padding-left:16px">Jersey</td><td class="r"><input class="inp" type="number" id="i_jers_n" value="3" step="1"> cab</td><td class="r">1.00</td><td class="r cv" id="i_jers_uae">—</td><td class="r"><input class="inp" type="number" id="i_jers_val" value="15000" step="1000"> $</td><td class="r cv" id="i_jers_tot">—</td></tr>
+      <tr><td style="padding-left:16px">Lidia Saltillo</td><td class="r"><input class="inp" type="number" id="i_lid_s_n" value="38" step="1"> cab</td><td class="r">1.00</td><td class="r cv" id="i_lid_s_uae">—</td><td class="r"><input class="inp" type="number" id="i_lid_s_val" value="20000" step="1000"> $</td><td class="r cv" id="i_lid_s_tot">—</td></tr>
+      <tr><td style="padding-left:16px">Lidia Murube</td><td class="r"><input class="inp" type="number" id="i_lid_m_n" value="17" step="1"> cab</td><td class="r">1.00</td><td class="r cv" id="i_lid_m_uae">—</td><td class="r"><input class="inp" type="number" id="i_lid_m_val" value="25000" step="1000"> $</td><td class="r cv" id="i_lid_m_tot">—</td></tr>
+      <tr><td style="padding-left:16px">Ovinos Katahdin</td><td class="r"><input class="inp" type="number" id="i_ovin_n" value="10" step="1"> cab</td><td class="r">0.25</td><td class="r cv" id="i_ovin_uae">—</td><td class="r"><input class="inp" type="number" id="i_ovin_val" value="5000" step="500"> $</td><td class="r cv" id="i_ovin_tot">—</td></tr>
+      <tr><td style="padding-left:16px">Caballos PRE</td><td class="r"><input class="inp" type="number" id="i_pre_n" value="19" step="1"> cab</td><td class="r">1.25</td><td class="r cv" id="i_pre_uae">—</td><td class="r"><input class="inp" type="number" id="i_pre_val" value="80000" step="5000"> $</td><td class="r cv" id="i_pre_tot">—</td></tr>
+      <tr><td style="padding-left:16px">Caballos cuarto de milla</td><td class="r"><input class="inp" type="number" id="i_cm_n" value="2" step="1"> cab</td><td class="r">1.25</td><td class="r cv" id="i_cm_uae">—</td><td class="r"><input class="inp" type="number" id="i_cm_val" value="20000" step="1000"> $</td><td class="r cv" id="i_cm_tot">—</td></tr>
+      <tr class="row-div"><td colspan="3">TOTAL UAE — TODAS LAS ESPECIES</td><td class="r cv" id="i_uae_total">—</td><td></td><td class="r cv" id="i_vii_total">—</td></tr>
+      <tr class="row-sub"><td colspan="6">Análisis de Capacidad (2,272 Ha total)</td></tr>
+      <tr><td>Coeficiente de agostadero Lampazos (Ha/UAE)</td><td class="r" colspan="2"><input class="inp" type="number" id="i_coef" value="15" min="5" max="30" step="1"> Ha/UAE</td><td class="r cv" id="i_cap_base">—</td><td colspan="2" style="font-size:11px;color:#888">UAE máx. sin pastoreo planeado</td></tr>
+      <tr><td>Ajuste R4P pastoreo planeado +25%</td><td class="r cv" colspan="3" id="i_cap_r4p">—</td><td colspan="2" style="font-size:11px;color:#888">UAE máx. con pastoreo planeado</td></tr>
+      <tr id="i_cap_status"><td colspan="6" class="c cv" id="i_cap_result">—</td></tr>
+    </tbody>
+  </table>
+
+</div>
+</div>
+
+<!-- ============================================================ KPIs ============================================================ -->
+<div id="tab-kpis" class="section">
+<div class="stitle">KPIs DE SEGUIMIENTO — BIOLÓGICOS Y FINANCIEROS</div>
+<div class="sec-body">
+
+  <div class="two-col">
+    <div>
+      <div class="sub-title">KPIs Biológicos</div>
+      <table>
+        <thead><tr><th>Indicador</th><th class="r">Real</th><th class="r">Objetivo</th><th class="c">Estado</th></tr></thead>
+        <tbody>
+          <tr><td>% Parición</td><td class="r"><input class="inp" type="number" id="k_paricion" value="65" min="0" max="100"> %</td><td class="r">≥ 80%</td><td class="c cv" id="ks_paricion">—</td></tr>
+          <tr><td>% Destete (becerros/vientres)</td><td class="r"><input class="inp" type="number" id="k_destete" value="62" min="0" max="100"> %</td><td class="r">≥ 75%</td><td class="c cv" id="ks_destete">—</td></tr>
+          <tr><td>Días abiertos promedio</td><td class="r"><input class="inp" type="number" id="k_dias_ab" value="120" min="0" max="365"> días</td><td class="r">≤ 85 días</td><td class="c cv" id="ks_dias">—</td></tr>
+          <tr><td>Peso destete machos (kg)</td><td class="r"><input class="inp" type="number" id="k_peso_m" value="290" min="100" max="400"> kg</td><td class="r">≥ 300 kg</td><td class="c cv" id="ks_peso">—</td></tr>
+          <tr><td>Condición corporal al parto (1-9)</td><td class="r"><input class="inp" type="number" id="k_cc" value="5" min="1" max="9" step="0.5"></td><td class="r">≥ 5</td><td class="c cv" id="ks_cc">—</td></tr>
+          <tr><td>Potreros por manada</td><td class="r"><input class="inp" type="number" id="k_potreros" value="6" min="1" max="50"> und</td><td class="r">≥ 16</td><td class="c cv" id="ks_potreros">—</td></tr>
+          <tr><td>Tasa mortalidad vacas (%)</td><td class="r"><input class="inp" type="number" id="k_mort" value="2" min="0" max="20" step="0.5"> %</td><td class="r">≤ 2%</td><td class="c cv" id="ks_mort">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <div class="sub-title">KPIs Financieros y de Comercialización</div>
+      <table>
+        <thead><tr><th>Indicador</th><th class="r">Real</th><th class="r">Objetivo</th><th class="c">Estado</th></tr></thead>
+        <tbody>
+          <tr><td>Precio venta becerro (MXP/kg)</td><td class="r cv" id="k_precio_real">—</td><td class="r">≥ $80/kg</td><td class="c cv" id="ks_precio">—</td></tr>
+          <tr><td>Número de compradores activos</td><td class="r"><input class="inp" type="number" id="k_compradores" value="1" min="1" max="20"> und</td><td class="r">≥ 3</td><td class="c cv" id="ks_compradores">—</td></tr>
+          <tr><td>MB / Producto Bruto (%)</td><td class="r cv" id="k_mb_pct">—</td><td class="r">≥ 70%</td><td class="c cv" id="ks_mb">—</td></tr>
+          <tr><td>CF / Producto Bruto (%)</td><td class="r cv" id="k_cf_pct">—</td><td class="r">≤ 40%</td><td class="c cv" id="ks_cf">—</td></tr>
+          <tr><td>ROA (%)</td><td class="r cv" id="k_roa_v">—</td><td class="r">≥ 10%</td><td class="c cv" id="ks_roa">—</td></tr>
+          <tr><td>PB por empleado (MXP)</td><td class="r cv" id="k_pb_emp">—</td><td class="r">≥ $265 K</td><td class="c cv" id="ks_pb_emp">—</td></tr>
+          <tr><td>Deuda / Activos totales (%)</td><td class="r cv" id="k_leverage">—</td><td class="r">≤ 30%</td><td class="c cv" id="ks_leverage">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sub-title" style="margin-top:8px">Semáforo R4P — Resumen de Salud del Negocio</div>
+  <div class="kpi-grid" id="semaforo-grid">
+    <!-- filled by JS -->
+  </div>
+
+</div>
+</div>
+
+<!-- ============================================================ PROYECTO ============================================================ -->
+<div id="tab-proyecto" class="section">
+<div class="stitle">FICHA DEL PROYECTO — RANCHO QUIJANO</div>
+<div class="sec-body">
+
+  <!-- CLIENTE -->
+  <div class="two-col" style="margin-bottom:18px">
+    <div>
+      <div class="sub-title">Datos del Cliente</div>
+      <table>
+        <tbody>
+          <tr><td style="width:160px;color:#555;font-weight:600">Cliente</td><td>Javier Eugenio Quijano Ferrara</td></tr>
+          <tr><td style="color:#555;font-weight:600">Rancho</td><td>Lampazos de Naranjo, Nuevo León</td></tr>
+          <tr><td style="color:#555;font-weight:600">Superficie total</td><td>2,272 Ha (2,000 agostadero + 272 riego aprox.)</td></tr>
+          <tr><td style="color:#555;font-weight:600">Predios</td><td>3 predios: El Porvenir, El Rodeo, Ojo de Agua</td></tr>
+          <tr><td style="color:#555;font-weight:600">Agua</td><td>3 pozos profundos, 1 presa, bordos, 4 norias</td></tr>
+          <tr><td style="color:#555;font-weight:600">Correo</td><td>javier.quijano@live.com.mx</td></tr>
+          <tr><td style="color:#555;font-weight:600">Servicio R4N</td><td>Auditoría económica — diagnóstico y modelo</td></tr>
+          <tr><td style="color:#555;font-weight:600">Consultor</td><td>Fausto — R4Numbers</td></tr>
+          <tr><td style="color:#555;font-weight:600">Inicio proyecto</td><td>Junio 2026</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <div class="sub-title">Inventario Ganadero Actual</div>
+      <table>
+        <tbody>
+          <tr><td style="width:160px;color:#555;font-weight:600">Vacas Brangus comercial</td><td>147 cab</td></tr>
+          <tr><td style="color:#555;font-weight:600">Vacas Brangus registro</td><td>2 cab</td></tr>
+          <tr><td style="color:#555;font-weight:600">Toros comerciales</td><td>6 cab</td></tr>
+          <tr><td style="color:#555;font-weight:600">Toro registro</td><td>1 cab</td></tr>
+          <tr><td style="color:#555;font-weight:600">Vaquillas reemplazo</td><td>~30 cab (estimar)</td></tr>
+          <tr><td style="color:#555;font-weight:600">Ganadería de Lidia</td><td>55 cab (Saltillo + Murube)</td></tr>
+          <tr><td style="color:#555;font-weight:600">Piemontese / Jersey</td><td>7 cab</td></tr>
+          <tr><td style="color:#555;font-weight:600">Ovinos Katahdin</td><td>~10 cab</td></tr>
+          <tr><td style="color:#555;font-weight:600">Caballos PRE + QM</td><td>21 cab</td></tr>
+          <tr><td style="color:#555;font-weight:600">Personal de campo</td><td>8 personas (nómina $141,684/mes)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DIAGNÓSTICO RÁPIDO -->
+  <div class="sub-title">Diagnóstico Inicial — Situación Actual vs Potencial</div>
+  <table style="margin-bottom:18px">
+    <thead><tr><th>Área</th><th>Situación Actual</th><th>Potencial con R4P</th><th class="c">Prioridad</th></tr></thead>
+    <tbody>
+      <tr class="row-red"><td>Precio de venta</td><td>~$35/kg (local, 1 comprador)</td><td>$80-110/kg (mercado abierto)</td><td class="c">🔴 URGENTE</td></tr>
+      <tr class="row-red"><td>% Parición</td><td>~65% (estimado)</td><td>≥ 85% con manejo reproductivo</td><td class="c">🔴 Alta</td></tr>
+      <tr class="row-warn"><td>Contabilidad formal</td><td>Cero registros contables</td><td>R4N completo implementado</td><td class="c">⚠️ Alta</td></tr>
+      <tr class="row-warn"><td>División Genética</td><td>2 vacas registro — sin vender</td><td>15-20 vaquillas/año a $50K c/u</td><td class="c">⚠️ Media</td></tr>
+      <tr class="row-warn"><td>Pastoreo planeado</td><td>Sin planificar — 6 potreros/manada</td><td>+25% capacidad de carga</td><td class="c">⚠️ Media</td></tr>
+      <tr class="row-warn"><td>Ganadería de Lidia</td><td>Sin datos de MB — probable madera seca</td><td>Liberar UA para Div 1 y 2</td><td class="c">⚠️ Evaluar</td></tr>
+      <tr><td>Forraje (87 Ha riego)</td><td>100% autoconsumo</td><td>Excedente vendible + reduce CD</td><td class="c">✅ Año 2</td></tr>
+    </tbody>
+  </table>
+
+  <!-- PLAN DE TRABAJO -->
+  <div class="sub-title">Plan de Trabajo — Fases de Optimización</div>
+
+  <div style="margin-bottom:14px">
+    <div style="background:#1F4E79;color:#fff;padding:8px 12px;border-radius:4px 4px 0 0;font-weight:700;font-size:12px">FASE 1 — Primeros 90 Días: Diagnóstico y Base Contable (Jul–Sep 2026)</div>
+    <table style="margin-bottom:0">
+      <thead><tr><th style="width:40px">#</th><th>Acción</th><th>Responsable</th><th class="c" style="width:120px">Estado</th></tr></thead>
+      <tbody>
+        <tr><td class="c">1</td><td>Confirmar precio de venta real y número de compradores activos</td><td>Fausto + Javier</td><td class="c" contenteditable="true" style="cursor:pointer" title="Click para editar">🟡 En proceso</td></tr>
+        <tr><td class="c">2</td><td>Confirmar % parición real (revisar registros con capataz Guadalupe Mata)</td><td>Fausto + Javier</td><td class="c" contenteditable="true" style="cursor:pointer">⬜ Pendiente</td></tr>
+        <tr><td class="c">3</td><td>Instalar sistema de registro contable R4N — catálogo de cuentas</td><td>R4Numbers</td><td class="c" contenteditable="true" style="cursor:pointer">⬜ Pendiente</td></tr>
+        <tr><td class="c">4</td><td>Realizar inventario físico completo de ganado y activos</td><td>Javier + Capataz</td><td class="c" contenteditable="true" style="cursor:pointer">⬜ Pendiente</td></tr>
+        <tr><td class="c">5</td><td>Aplicar buscador de madera seca a División Lidia</td><td>Fausto</td><td class="c" contenteditable="true" style="cursor:pointer">⬜ Pendiente</td></tr>
+        <tr><td class="c">6</td><td>Identificar 2-3 compradores alternativos de becerros (precio mercado)</td><td>Javier</td><td class="c" contenteditable="true" style="cursor:pointer">⬜ Pendiente</td></tr>
+        <tr><td class="c">7</td><td>Registrar deuda completa: Citibanamex + otros pasivos</td><td>Javier + Fausto</td><td class="c" contenteditable="true" style="cursor:pointer">⬜ Pendiente</td></tr>
+        <tr><td class="c">8</td><td>Primer cierre mensual R4N (julio 2026)</td><td>R4Numbers</td><td class="c" contenteditable="true" style="cursor:pointer">⬜ Pendiente</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-bottom:14px">
+    <div style="background:#2E75B6;color:#fff;padding:8px 12px;border-radius:4px 4px 0 0;font-weight:700;font-size:12px">FASE 2 — Meses 4-6: Comercialización y Eficiencia (Oct–Dic 2026)</div>
+    <table style="margin-bottom:0">
+      <thead><tr><th style="width:40px">#</th><th>Acción</th><th>Responsable</th><th class="c" style="width:120px">Estado</th></tr></thead>
+      <tbody>
+        <tr><td class="c">9</td><td>Cerrar contrato con nuevo comprador a precio mercado ($80+/kg)</td><td>Javier</td><td class="c" contenteditable="true" style="cursor:pointer">⬜ Pendiente</td></tr>
+        <tr><td class="c">10</td><td>Implementar pastoreo planeado: mapeo de potreros y calendario de rotación</td><td>Fausto + Capataz</td><td class="c" contenteditable="true" style="cursor:pointer">⬜ Pendiente</td></tr>
+        <tr><td class="c">11</td><td>Protocolo reproductivo: sincronización de celos en vacas comerciales</td><td>Médico veterinario</td><td class="c" contenteditable="true" style="cursor:pointer">⬜ Pendiente</td></tr>
+        <tr><td class="c">12</td><td>Decisión sobre División Lidia: continuar o reasignar capacidad</td><td>Fausto + Javier</td><td class="c" contenteditable="true" style="cursor:pointer">⬜ Pendiente</td></tr>
+        <tr><td class="c">13</td><td>Primer reporte financiero semestral R4P</td><td>R4Numbers</td><td class="c" contenteditable="true" style="cursor:pointer">⬜ Pendiente</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-bottom:14px">
+    <div style="background:#C55A11;color:#fff;padding:8px 12px;border-radius:4px 4px 0 0;font-weight:700;font-size:12px">FASE 3 — Año 2-3: Crecimiento División Genética (2027–2028)</div>
+    <table style="margin-bottom:0">
+      <thead><tr><th style="width:40px">#</th><th>Acción</th><th>Responsable</th><th class="c" style="width:120px">Estado</th></tr></thead>
+      <tbody>
+        <tr><td class="c">14</td><td>Aumentar vacas registro: comprar 8-10 vientres Brangus registro selecto</td><td>Javier (con utilidades)</td><td class="c" contenteditable="true" style="cursor:pointer">⬜ Año 2</td></tr>
+        <tr><td class="c">15</td><td>Primer lote de 5-8 vaquillas registro para venta ($50K-$80K c/u)</td><td>Javier</td><td class="c" contenteditable="true" style="cursor:pointer">⬜ Año 2</td></tr>
+        <tr><td class="c">16</td><td>Aumentar vientres comerciales a 220 (escala mínima R4P)</td><td>Javier (reinversión)</td><td class="c" contenteditable="true" style="cursor:pointer">⬜ Año 3</td></tr>
+        <tr><td class="c">17</td><td>Evaluar División Engorda con excedentes forrajeros propios</td><td>Fausto</td><td class="c" contenteditable="true" style="cursor:pointer">⬜ Año 3</td></tr>
+        <tr><td class="c">18</td><td>Meta: PB ≥ $5.3M — ROA ≥ 10% — empresa del 20% superior R4P</td><td>Todos</td><td class="c" contenteditable="true" style="cursor:pointer">🎯 Meta</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- INFORMACIÓN FALTANTE -->
+  <div class="sub-title" style="color:#b71c1c">Información Pendiente de Confirmar</div>
+  <div class="alert alert-warn" style="margin-bottom:10px">Las siguientes cifras están estimadas en el modelo. Confirmar en primera reunión de trabajo.</div>
+  <table>
+    <thead><tr><th>Dato</th><th>Valor actual en modelo</th><th>Cómo confirmar</th></tr></thead>
+    <tbody>
+      <tr class="row-warn"><td>Precio real de venta becerros</td><td>$35/kg (estimado)</td><td>Revisar últimas facturas de venta</td></tr>
+      <tr class="row-warn"><td>% Parición real</td><td>65% (calibrado a ingresos)</td><td>Conteo de partos vs vientres empadrados</td></tr>
+      <tr class="row-warn"><td>Becerros vendidos por año</td><td>48 machos, 0 hembras</td><td>Revisar guías de traslado</td></tr>
+      <tr class="row-warn"><td>Ingresos por ganadería de lidia</td><td>$0 (sin dato)</td><td>Corridas, ventas, servicios</td></tr>
+      <tr class="row-warn"><td>Saldo real crédito Citibanamex</td><td>$397,000 estimado</td><td>Estado de cuenta</td></tr>
+      <tr class="row-warn"><td>Vaquillas de reemplazo en inventario</td><td>~30 estimado</td><td>Inventario físico</td></tr>
+      <tr class="row-warn"><td>Valor catastral / comercial tierras</td><td>$45K/Ha agostadero, $80K/Ha riego</td><td>Avalúo o referencia mercado local</td></tr>
+    </tbody>
+  </table>
+
+  <div class="snote" style="margin-top:12px">💡 Las celdas de "Estado" en el plan de trabajo son editables — haz clic para actualizar el progreso directamente en el tablero.</div>
+
+</div>
+</div>
+
+</div><!-- /#app -->
+
+<script>
+var $ = function(id){ return document.getElementById(id); };
+var n = function(id){ return parseFloat($$(id)) || 0; };
+function $$(id){ var el=$(id); return el ? el.value||el.textContent||'0' : '0'; }
+function get(id){ var el=$(id); if(!el) return 0; return parseFloat(el.value)||0; }
+function pesos(v,dec){ dec=dec||0; return (v<0?'-':'')+'$'+Math.abs(v).toLocaleString('es-MX',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
+function pct(v,dec){ dec=dec!==undefined?dec:1; return (v).toFixed(dec)+'%'; }
+function set(id,val){ var el=$(id); if(el) el.textContent=val; }
+function cls(id,c){ var el=$(id); if(el){ el.className=el.className.replace(/\b(pos|neg|neu|pct-good|pct-warn|pct-bad)\b/g,''); if(c) el.className+=' '+c; } }
+
+function semaforo(val,lo,hi,invert){
+  if(invert){ if(val<=lo) return '✅ OK'; if(val<=hi) return '⚠️ Alerta'; return '🔴 Critico'; }
+  if(val>=hi) return '✅ OK'; if(val>=lo) return '⚠️ Alerta'; return '🔴 Crítico';
+}
+
+var MESES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+function update(){
+  // === INGRESOS POR DIVISIÓN ===
+  var vacas   = get('v_vacas');
+  var par     = get('v_paricion')/100;
+  var becerros= vacas*par;
+  var machos_v= get('v_machos_vend');
+  var peso_m  = get('v_peso_m');
+  var precio_m= get('v_precio_m');
+  var hembras_v=get('v_hembras_vend');
+  var peso_h  = get('v_peso_h');
+  var precio_h= get('v_precio_h');
+  var desecho_n=get('v_desecho_n');
+  var desecho_p=get('v_desecho_p');
+
+  var ing_m   = machos_v*peso_m*precio_m;
+  var ing_h   = hembras_v*peso_h*precio_h;
+  var ing_d   = desecho_n*desecho_p;
+  var pb_cria = ing_m+ing_h+ing_d;
+
+  set('c_becerros', Math.round(becerros)+' cab (estimados)');
+  set('c_ing_machos', pesos(ing_m));
+  set('c_ing_hembras', pesos(ing_h));
+  set('c_ing_desecho', pesos(ing_d));
+  set('c_pb_cria', pesos(pb_cria));
+
+  var vaq_v   = get('v_vaq_vend');
+  var vaq_p   = get('v_vaq_precio');
+  var tor_v   = get('v_toro_vend');
+  var tor_p   = get('v_toro_precio');
+  var pb_gen  = vaq_v*vaq_p + tor_v*tor_p;
+  set('c_pb_gen', pesos(pb_gen));
+
+  var forr_ton = get('v_forraje_ton');
+  var forr_p   = get('v_forraje_precio');
+  var pb_forr  = forr_ton*forr_p;
+  set('c_pb_forr', pesos(pb_forr));
+
+  var pb_lidia = get('v_lidia_ing');
+  set('c_pb_lidia', pesos(pb_lidia));
+
+  var PB = pb_cria+pb_gen+pb_forr+pb_lidia;
+
+  // === COSTOS DIRECTOS ===
+  var min_cab  = get('g_mineral_cab');
+  var prot_cab = get('g_proteico_cab');
+  var rep_cab  = get('g_reprod_cab');
+  var san_cab  = get('g_sanidad_cab');
+  var fletes   = get('g_fletes');
+  var mo_dir   = get('g_mo_directa');
+  var lid_cd   = get('g_lidia_cd');
+  var otros_cd = get('g_otros_cd');
+
+  var min_tot  = vacas*min_cab;
+  var prot_tot = vacas*prot_cab;
+  var rep_tot  = vacas*rep_cab;
+  var san_tot  = vacas*san_cab;
+  var CD = min_tot+prot_tot+rep_tot+san_tot+fletes+mo_dir+lid_cd+otros_cd;
+
+  set('g_mineral_tot', pesos(min_tot));
+  set('g_proteico_tot', pesos(prot_tot));
+  set('g_reprod_tot', pesos(rep_tot));
+  set('g_sanidad_tot', pesos(san_tot));
+  set('g_fletes_v', pesos(fletes));
+  set('g_mo_directa_v', pesos(mo_dir));
+  set('g_lidia_cd_v', pesos(lid_cd));
+  set('g_otros_cd_v', pesos(otros_cd));
+  set('g_cd_total', pesos(CD));
+  var cd_pct = PB>0 ? CD/PB*100 : 0;
+  set('g_cd_pct', pct(cd_pct)); cls('g_cd_pct', cd_pct<=30?'pct-good':cd_pct<=45?'pct-warn':'pct-bad');
+
+  // === COSTOS FIJOS ===
+  var cap   = get('g_cap'); var carp  = get('g_carp');
+  var peon  = get('g_peon'); var agri  = get('g_agri'); var alba  = get('g_alba');
+  var serv  = get('g_serv'); var comb  = get('g_comb'); var mant  = get('g_mant');
+  var deuda = get('g_deuda'); var tasa  = get('g_tasa')/100;
+  var dep_maq=get('g_dep_maq'); var dep_inst=get('g_dep_inst');
+  var seguros=get('g_seguros'); var otros_cf=get('g_otros_cf');
+
+  var nom_mes = cap+carp+peon+agri+alba;
+  var int_mes = deuda*tasa/12;
+  var int_a   = deuda*tasa;
+
+  var CF = nom_mes*12 + serv*12 + comb*12 + mant*12 + int_a + dep_maq + dep_inst + seguros*12 + otros_cf*12;
+
+  set('g_cap_a', pesos(cap*12)); set('g_carp_a', pesos(carp*12));
+  set('g_peon_a', pesos(peon*12)); set('g_agri_a', pesos(agri*12)); set('g_alba_a', pesos(alba*12));
+  set('g_nom_tot_a', pesos(nom_mes*12));
+  set('g_serv_a', pesos(serv*12)); set('g_comb_a', pesos(comb*12)); set('g_mant_a', pesos(mant*12));
+  set('g_int_mes', pesos(int_mes)); set('g_int_a', pesos(int_a));
+  set('g_seguros_a', pesos(seguros*12)); set('g_otros_cf_a', pesos(otros_cf*12));
+  set('g_cf_total', pesos(CF));
+  var cf_pct = PB>0 ? CF/PB*100 : 999;
+  set('g_cf_pct', pct(cf_pct)); cls('g_cf_pct', cf_pct<=40?'pct-good':cf_pct<=80?'pct-warn':'pct-bad');
+
+  // === ACTIVOS ===
+  var a_agost = get('a_ha_agost')*get('a_val_agost');
+  var a_riego = get('a_ha_riego')*get('a_val_riego');
+  var a_maq   = get('a_maq');
+  var a_inst  = get('a_inst');
+  // Ganado Vii from inventory
+  var gan_vii = (get('i_vacas_n')||vacas)*get('i_vacas_val') + get('i_toros_n')*get('i_toros_val') +
+    get('i_vaq_r_n')*get('i_vaq_r_val') + get('i_vac_reg_n')*get('i_vac_reg_val') +
+    get('i_tor_reg_n')*get('i_tor_reg_val') + get('i_lid_s_n')*get('i_lid_s_val') +
+    get('i_lid_m_n')*get('i_lid_m_val') + get('i_pre_n')*get('i_pre_val') +
+    get('i_cm_n')*get('i_cm_val');
+  var AT = a_agost+a_riego+a_maq+a_inst+gan_vii;
+
+  set('a_agost_tot', pesos(a_agost)); set('a_riego_tot', pesos(a_riego));
+  set('a_maq_v', pesos(a_maq)); set('a_inst_v', pesos(a_inst));
+  set('a_gan_label', pesos(gan_vii)+' (auto-calculado desde Inventario)');
+  set('a_gan_tot', pesos(gan_vii));
+  set('a_total', pesos(AT));
+
+  // === P&L ===
+  var MB   = PB-CD;
+  var UTIL = MB-CF;
+  var ROA  = AT>0 ? UTIL/AT*100 : 0;
+  var PE   = PB>0 ? (CD+CF)/PB*100 : 100;
+  var mb_pct  = PB>0 ? MB/PB*100 : 0;
+  var util_pct= PB>0 ? UTIL/PB*100 : 0;
+
+  // Summary dashboard
+  set('sum-pb', pesos(PB)); set('sum-pb-cria', pesos(pb_cria));
+  set('sum-pb-gen', pesos(pb_gen)); set('sum-pb-forr', pesos(pb_forr)); set('sum-pb-lidia', pesos(pb_lidia));
+  set('sum-pb-cria-pct', PB>0?pct(pb_cria/PB*100):'—');
+  set('sum-pb-gen-pct', PB>0?pct(pb_gen/PB*100):'—');
+  set('sum-pb-forr-pct', PB>0?pct(pb_forr/PB*100):'—');
+  set('sum-pb-lidia-pct', PB>0?pct(pb_lidia/PB*100):'—');
+  set('sum-cd', pesos(CD));
+  set('sum-cd-pct', pct(cd_pct));
+  set('sum-mb', pesos(MB));
+  set('sum-mb-pct', pct(mb_pct));
+  set('sum-cf', pesos(CF));
+  set('sum-cf-pct', pct(cf_pct));
+  set('sum-util', pesos(UTIL));
+  set('sum-util-pct', pct(util_pct));
+  cls('sum-util', UTIL>=0?'pos':'neg');
+
+  // Modelo P&L tab
+  set('m_pb', pesos(PB)); set('m_cd', pesos(CD)); set('m_mb', pesos(MB));
+  set('m_cf', pesos(CF)); set('m_util', pesos(UTIL));
+  set('m_cd_pct', pct(cd_pct)); set('m_mb_pct', pct(mb_pct));
+  set('m_cf_pct', pct(cf_pct)); set('m_util_pct', pct(util_pct));
+  cls('m_util', UTIL>=0?'pos':'neg');
+
+  // KPI cards
+  var setPbCard = function(id,cardId,val,text,ok,warn){
+    set(id, val);
+    var el=$(cardId);
+    if(!el)return;
+    el.className='kpi-card'+(ok?'':warn?' warn':' danger');
+  };
+  set('kpi-pb-val', pesos(PB));
+  set('kpi-mb-val', pct(mb_pct));
+  cls('kpi-mb-val', mb_pct>=70?'':'');
+  $('kpi-mb').className='kpi-card'+(mb_pct>=70?' good':mb_pct>=50?' warn':' danger');
+  set('kpi-cf-val', pesos(CF));
+  $('kpi-cf').className='kpi-card'+(cf_pct<=40?' good':cf_pct<=80?' warn':' danger');
+  set('kpi-util-val', pesos(UTIL));
+  $('kpi-util').className='kpi-card'+(UTIL>=0?' good':' danger');
+  set('kpi-roa-val', pct(ROA));
+  $('kpi-roa').className='kpi-card'+(ROA>=10?' good':ROA>=5?' warn':' danger');
+  set('kpi-pe-val', pct(Math.min(PE,999)));
+  $('kpi-pe').className='kpi-card'+(PE<=85?' good':PE<=100?' warn':' danger');
+
+  // Alert
+  var alertEl=$('alert-main');
+  if(UTIL<0){
+    alertEl.className='alert alert-danger';
+    alertEl.textContent='Déficit anual estimado: '+pesos(Math.abs(UTIL))+' — La operación no cubre sus costos con los ingresos actuales. Acción prioritaria: aumentar precio de venta y/o activar División Genética.';
+  } else {
+    alertEl.className='alert alert-good';
+    alertEl.textContent='Utilidad proyectada: '+pesos(UTIL)+' ('+pct(util_pct)+' del PB). El negocio genera excedente. Reinvertir en crecimiento de Divisiones 1 y 2.';
+  }
+
+  // Benchmark bars
+  function setBar(fillId, valId, val, target, lower_is_better){
+    var pctFill, color;
+    if(lower_is_better){
+      pctFill = Math.min(val/target*100, 200);
+      color = val<=target ? '#639922' : val<=target*1.5 ? '#EF9F27' : '#E24B4A';
+    } else {
+      pctFill = Math.min(val/target*100, 100);
+      color = val>=target ? '#639922' : val>=target*0.7 ? '#EF9F27' : '#E24B4A';
+    }
+    var el=$(fillId); if(el){el.style.width=Math.min(pctFill,100)+'%'; el.style.background=color;}
+    var v=$(valId); if(v){ v.textContent=pct(val); v.style.color=color; }
+  }
+  setBar('bar-cd','bv-cd',cd_pct,30,true);
+  setBar('bar-cf','bv-cf',cf_pct,40,true);
+  setBar('bar-mb','bv-mb',mb_pct,70,false);
+  setBar('bar-util','bv-util',util_pct,30,false);
+  setBar('bar-roa','bv-roa',ROA,10,false);
+
+  // === INVENTARIO ===
+  var invData = [
+    {n:'i_vacas_n', nv:vacas, u:1.55, vi:'i_vacas_val', tot:'i_vacas_tot', uae:'i_vacas_uae', locked:true},
+    {n:'i_toros_n', nv:null, u:1.50, vi:'i_toros_val', tot:'i_toros_tot', uae:'i_toros_uae'},
+    {n:'i_vaq_r_n', nv:null, u:0.75, vi:'i_vaq_r_val', tot:'i_vaq_r_tot', uae:'i_vaq_r_uae'},
+    {n:'i_vac_reg_n',nv:null,u:1.55, vi:'i_vac_reg_val',tot:'i_vac_reg_tot',uae:'i_vac_reg_uae'},
+    {n:'i_tor_reg_n',nv:null,u:1.50, vi:'i_tor_reg_val',tot:'i_tor_reg_tot',uae:'i_tor_reg_uae'},
+    {n:'i_piem_n', nv:null, u:1.00, vi:'i_piem_val', tot:'i_piem_tot', uae:'i_piem_uae'},
+    {n:'i_jers_n', nv:null, u:1.00, vi:'i_jers_val', tot:'i_jers_tot', uae:'i_jers_uae'},
+    {n:'i_lid_s_n', nv:null, u:1.00, vi:'i_lid_s_val', tot:'i_lid_s_tot', uae:'i_lid_s_uae'},
+    {n:'i_lid_m_n', nv:null, u:1.00, vi:'i_lid_m_val', tot:'i_lid_m_tot', uae:'i_lid_m_uae'},
+    {n:'i_ovin_n', nv:null, u:0.25, vi:'i_ovin_val', tot:'i_ovin_tot', uae:'i_ovin_uae'},
+    {n:'i_pre_n', nv:null, u:1.25, vi:'i_pre_val', tot:'i_pre_tot', uae:'i_pre_uae'},
+    {n:'i_cm_n', nv:null, u:1.25, vi:'i_cm_val', tot:'i_cm_tot', uae:'i_cm_uae'},
+  ];
+  var totalUAE=0, totalVii=0;
+  invData.forEach(function(d){
+    var cabezas = d.locked ? vacas : get(d.n);
+    if(d.locked){ set(d.n, cabezas+' (sincronizado)'); }
+    var uae = Math.round(cabezas*d.u*10)/10;
+    var val = get(d.vi);
+    var tot = cabezas*val;
+    totalUAE+=uae; totalVii+=tot;
+    set(d.uae, uae.toFixed(1));
+    set(d.tot, pesos(tot));
+  });
+  set('i_uae_total', totalUAE.toFixed(1)+' UAE');
+  set('i_vii_total', pesos(totalVii));
+
+  var ha_tot = 2272;
+  var coef  = get('i_coef');
+  var cap_base = Math.round(ha_tot/coef*10)/10;
+  var cap_r4p  = Math.round(cap_base*1.25*10)/10;
+  set('i_cap_base', cap_base.toFixed(0)+' UAE');
+  set('i_cap_r4p', 'Con pastoreo planeado R4P: '+cap_r4p.toFixed(0)+' UAE máximo');
+  var overcap = totalUAE > cap_r4p;
+  set('i_cap_result', overcap
+    ? '⚠ SOBRECARGA: '+totalUAE.toFixed(0)+' UAE actuales vs '+cap_r4p.toFixed(0)+' UAE máximas. Reducir inventario antes de crecer.'
+    : '✅ CAPACIDAD DISPONIBLE: '+totalUAE.toFixed(0)+' UAE actuales vs '+cap_r4p.toFixed(0)+' UAE máximas. Brecha: '+(cap_r4p-totalUAE).toFixed(0)+' UAE disponibles.');
+  $('i_cap_status').className = overcap ? 'row-red' : 'row-green';
+
+  // === FLUJO DE EFECTIVO ===
+  var saldo_ini = get('f_saldo_ini');
+  var mes_v = Math.round(get('f_mes_venta'))-1;
+  var pct_mes = get('f_pct_mes')/100;
+  var cf_mes = CF/12;
+  // Distribute income
+  var ingresos_mes = new Array(12).fill(0);
+  var resto = 1-pct_mes;
+  ingresos_mes[mes_v] = PB*pct_mes;
+  if(mes_v>0) ingresos_mes[mes_v-1]+=PB*(resto*0.4);
+  ingresos_mes[(mes_v+1)%12]+=PB*(resto*0.6);
+
+  var tbody = $('flujo-tbody');
+  if(tbody){
+    var html='';
+    // Header sub
+    html+='<tr class="row-sub"><td>INGRESOS</td>';
+    for(var m=0;m<12;m++) html+='<td class="r cv '+(ingresos_mes[m]>0?'mes-pos':'mes-zero')+'">'+pesos(ingresos_mes[m])+'</td>';
+    html+='<td class="r cv">'+pesos(PB)+'</td></tr>';
+
+    html+='<tr><td style="padding-left:12px">Venta becerros y ganado</td>';
+    for(var m=0;m<12;m++) html+='<td class="r" style="font-size:11px;color:#555">'+pesos(ingresos_mes[m])+'</td>';
+    html+='<td class="r">'+pesos(PB)+'</td></tr>';
+
+    html+='<tr class="row-sub"><td>EGRESOS FIJOS</td>';
+    for(var m=0;m<12;m++) html+='<td class="r cv mes-neg">'+pesos(-cf_mes)+'</td>';
+    html+='<td class="r cv neg">'+pesos(-CF)+'</td></tr>';
+
+    html+='<tr><td style="padding-left:12px">Nómina</td>';
+    for(var m=0;m<12;m++) html+='<td class="r" style="font-size:11px;color:#555">'+pesos(-(nom_mes))+'</td>';
+    html+='<td class="r">'+pesos(-nom_mes*12)+'</td></tr>';
+
+    html+='<tr><td style="padding-left:12px">Servicios+Combustible+Otros</td>';
+    var op_mes=(serv+comb+mant+seguros+otros_cf)*12+int_a;
+    for(var m=0;m<12;m++) html+='<td class="r" style="font-size:11px;color:#555">'+pesos(-((serv+comb+mant+seguros+otros_cf)+int_a/12))+'</td>';
+    html+='<td class="r">'+pesos(-(op_mes))+'</td></tr>';
+
+    var flujos=[], saldo=saldo_ini;
+    html+='<tr class="row-div"><td>FLUJO NETO MENSUAL</td>';
+    for(var m=0;m<12;m++){
+      var fn=ingresos_mes[m]-cf_mes;
+      flujos.push(fn);
+      html+='<td class="r cv '+(fn>=0?'mes-pos':'mes-neg')+'">'+pesos(fn)+'</td>';
+    }
+    html+='<td class="r cv '+(UTIL>=0?'pos':'neg')+'">'+pesos(UTIL)+'</td></tr>';
+
+    html+='<tr class="row-sub"><td>SALDO ACUMULADO</td>';
+    var minSaldo=saldo;
+    for(var m=0;m<12;m++){
+      saldo+=flujos[m];
+      if(saldo<minSaldo) minSaldo=saldo;
+      html+='<td class="r cv '+(saldo>=0?'mes-pos':'mes-neg')+'">'+pesos(saldo)+'</td>';
+    }
+    html+='<td class="r cv '+(saldo>=0?'pos':'neg')+'">'+pesos(saldo)+'</td></tr>';
+
+    tbody.innerHTML=html;
+
+    // Alert capital trabajo
+    if(minSaldo<0){
+      var alertFlujo=$('flujo-tbody').nextElementSibling;
+      // check if alert exists
+    }
+  }
+
+  // === KPIs TAB ===
+  set('k_precio_real', '$'+precio_m+'/kg');
+  set('k_mb_pct', pct(mb_pct)); set('k_cf_pct', pct(cf_pct));
+  set('k_roa_v', pct(ROA));
+  var emp=8; set('k_pb_emp', pesos(PB/emp));
+  set('k_leverage', AT>0?pct(deuda/AT*100):'—');
+
+  function kpiStatus(id, val, target, invert, decimals){
+    var ok = invert ? val<=target : val>=target;
+    var warn = invert ? val<=target*1.5 : val>=target*0.7;
+    set(id, ok?'✅':warn?'⚠️':'🔴');
+  }
+  kpiStatus('ks_paricion', get('k_paricion'), 80, false);
+  kpiStatus('ks_destete', get('k_destete'), 75, false);
+  kpiStatus('ks_dias', get('k_dias_ab'), 85, true);
+  kpiStatus('ks_peso', get('k_peso_m'), 300, false);
+  kpiStatus('ks_cc', get('k_cc'), 5, false);
+  kpiStatus('ks_potreros', get('k_potreros'), 16, false);
+  kpiStatus('ks_mort', get('k_mort'), 2, true);
+  kpiStatus('ks_precio', precio_m, 80, false);
+  kpiStatus('ks_compradores', get('k_compradores'), 3, false);
+  kpiStatus('ks_mb', mb_pct, 70, false);
+  kpiStatus('ks_cf', cf_pct, 40, true);
+  kpiStatus('ks_roa', ROA, 10, false);
+  kpiStatus('ks_pb_emp', PB/emp, 265000, false);
+  kpiStatus('ks_leverage', deuda/AT*100, 30, true);
+
+  // Semaforo grid
+  var sem=$('semaforo-grid');
+  if(sem){
+    var items=[
+      {lbl:'Precio venta', val:'$'+precio_m+'/kg', ok:precio_m>=80, warn:precio_m>=50},
+      {lbl:'Margen Bruto', val:pct(mb_pct), ok:mb_pct>=70, warn:mb_pct>=50},
+      {lbl:'CF vs PB', val:pct(cf_pct), ok:cf_pct<=40, warn:cf_pct<=80},
+      {lbl:'Utilidad', val:pesos(UTIL), ok:UTIL>0, warn:UTIL>-500000},
+      {lbl:'ROA', val:pct(ROA), ok:ROA>=10, warn:ROA>=5},
+      {lbl:'Capacidad UA', val:totalUAE.toFixed(0)+'/'+cap_r4p.toFixed(0), ok:totalUAE<=cap_r4p, warn:totalUAE<=cap_r4p*1.1},
+    ];
+    sem.innerHTML=items.map(function(it){
+      return '<div class="kpi-card'+(it.ok?' good':it.warn?'':' danger')+'">'
+        +'<div class="kpi-lbl">'+it.lbl+'</div>'
+        +'<div class="kpi-val">'+(it.ok?'✅':it.warn?'⚠️':'🔴')+'</div>'
+        +'<div class="kpi-bench">'+it.val+'</div></div>';
+    }).join('');
+  }
+}
+
+// Tab switching
+function showTab(name){
+  document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
+  document.querySelectorAll('nav button').forEach(function(b){b.classList.remove('active');});
+  var el=$('tab-'+name); if(el) el.classList.add('active');
+  var btns=document.querySelectorAll('nav button');
+  btns.forEach(function(b){ if(b.getAttribute('onclick')==="showTab('"+name+"')") b.classList.add('active'); });
+}
+
+// Attach listeners to all inputs
+document.querySelectorAll('input').forEach(function(el){
+  el.addEventListener('input', update);
+  el.addEventListener('change', update);
+});
+
+// Initial render
+update();
+</script>
+
+</body>
+</html>
