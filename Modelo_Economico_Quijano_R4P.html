@@ -138,6 +138,7 @@ hr.sep{border:none;border-top:1px solid #e0e0e0;margin:16px 0}
   <button onclick="showTab('flujo')">💰 Flujo Efectivo</button>
   <button onclick="showTab('inventario')">🐄 Inventario</button>
   <button onclick="showTab('kpis')">📏 KPIs</button>
+  <button onclick="showTab('cal')">📅 Calendario</button>
   <button onclick="showTab('proyecto')" style="background:#C55A11;color:#fff;border-right:none">📌 Proyecto</button>
 </nav>
 
@@ -837,6 +838,85 @@ hr.sep{border:none;border-top:1px solid #e0e0e0;margin:16px 0}
 </div>
 </div>
 
+<!-- ============================================================ CALENDARIO ============================================================ -->
+<div id="tab-cal" class="section">
+<div class="stitle">CALENDARIO DE ACTIVIDADES — RANCHO QUIJANO</div>
+<div class="sec-body">
+
+<!-- Leyenda de tipos -->
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center">
+  <span style="font-weight:700;font-size:12px;color:#555">Tipo de evento:</span>
+  <span class="cal-leg" data-type="paricion">🐄 Parición</span>
+  <span class="cal-leg" data-type="monta">🐂 Monta</span>
+  <span class="cal-leg" data-type="suplemento">🌾 Suplemento</span>
+  <span class="cal-leg" data-type="sanidad">💉 Sanidad</span>
+  <span class="cal-leg" data-type="forraje">🌱 Forraje/Riego</span>
+  <span class="cal-leg" data-type="venta">💰 Venta/Compra</span>
+  <span class="cal-leg" data-type="mantenimiento">🔧 Mantenimiento</span>
+  <span class="cal-leg" data-type="administrativo">📋 Admin / R4N</span>
+  <span class="cal-leg" data-type="otro">⭐ Otro</span>
+</div>
+
+<!-- Controles de año -->
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+  <button onclick="calChangeYear(-1)" style="background:#1F4E79;color:#fff;border:none;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:13px">◀ Año ant.</button>
+  <span id="cal-year-label" style="font-size:18px;font-weight:700;color:#1F4E79"></span>
+  <button onclick="calChangeYear(1)" style="background:#1F4E79;color:#fff;border:none;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:13px">Año sig. ▶</button>
+  <button onclick="calResetSugerencias()" style="background:#639922;color:#fff;border:none;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:8px">↺ Restaurar sugerencias R4P</button>
+  <span style="font-size:11px;color:#888;margin-left:4px">Los eventos se guardan automáticamente en este navegador</span>
+</div>
+
+<!-- Grid de 12 meses -->
+<div id="cal-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px"></div>
+
+</div>
+</div>
+
+<!-- MODAL de día -->
+<div id="cal-modal-bg" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:9000;justify-content:center;align-items:center">
+  <div style="background:#fff;border-radius:8px;padding:20px;width:460px;max-width:96vw;max-height:80vh;overflow-y:auto;position:relative">
+    <button onclick="calCloseModal()" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:18px;cursor:pointer;color:#666">✕</button>
+    <div id="cal-modal-title" style="font-weight:700;font-size:15px;color:#1F4E79;margin-bottom:12px"></div>
+
+    <!-- Eventos existentes -->
+    <div id="cal-modal-events" style="margin-bottom:14px"></div>
+
+    <!-- Formulario agregar evento -->
+    <div style="border-top:1px solid #e0e0e0;padding-top:12px">
+      <div style="font-weight:700;font-size:12px;color:#555;margin-bottom:8px">➕ Agregar evento</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div>
+          <label style="font-size:11px;color:#666">Tipo</label>
+          <select id="cal-new-type" style="width:100%;padding:5px;border:1px solid #ccc;border-radius:4px;font-size:12px">
+            <option value="paricion">🐄 Parición</option>
+            <option value="monta">🐂 Monta</option>
+            <option value="suplemento" selected>🌾 Suplemento</option>
+            <option value="sanidad">💉 Sanidad</option>
+            <option value="forraje">🌱 Forraje/Riego</option>
+            <option value="venta">💰 Venta/Compra</option>
+            <option value="mantenimiento">🔧 Mantenimiento</option>
+            <option value="administrativo">📋 Admin / R4N</option>
+            <option value="otro">⭐ Otro</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:#666">Cantidad / Dosis (opcional)</label>
+          <input id="cal-new-qty" type="text" placeholder="ej: 150g/cab, 45kg, $8,000" style="width:100%;padding:5px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box">
+        </div>
+      </div>
+      <div style="margin-bottom:8px">
+        <label style="font-size:11px;color:#666">Título del evento *</label>
+        <input id="cal-new-title" type="text" placeholder="Ej: Inicio suplemento proteico" style="width:100%;padding:5px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:10px">
+        <label style="font-size:11px;color:#666">Notas / Descripción</label>
+        <textarea id="cal-new-desc" rows="2" placeholder="Observaciones, cantidades, responsable..." style="width:100%;padding:5px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;resize:vertical"></textarea>
+      </div>
+      <button onclick="calAddEvent()" style="background:#1F4E79;color:#fff;border:none;padding:7px 18px;border-radius:4px;cursor:pointer;font-size:13px;width:100%">Guardar evento</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============================================================ PROYECTO ============================================================ -->
 <div id="tab-proyecto" class="section">
 <div class="stitle">FICHA DEL PROYECTO — RANCHO QUIJANO</div>
@@ -1369,6 +1449,263 @@ document.querySelectorAll('input').forEach(function(el){
 
 // Initial render
 update();
+
+// ============================================================
+// CALENDARIO DE ACTIVIDADES
+// ============================================================
+
+// Colores por tipo de evento
+var CAL_COLORS = {
+  paricion:      {bg:'#1b5e20', label:'#fff', dot:'#2e7d32'},
+  monta:         {bg:'#0d47a1', label:'#fff', dot:'#1565c0'},
+  suplemento:    {bg:'#e65100', label:'#fff', dot:'#f57c00'},
+  sanidad:       {bg:'#b71c1c', label:'#fff', dot:'#c62828'},
+  forraje:       {bg:'#33691e', label:'#fff', dot:'#558b2f'},
+  venta:         {bg:'#4a148c', label:'#fff', dot:'#6a1b9a'},
+  mantenimiento: {bg:'#006064', label:'#fff', dot:'#00838f'},
+  administrativo:{bg:'#37474f', label:'#fff', dot:'#546e7a'},
+  otro:          {bg:'#f57f17', label:'#fff', dot:'#f9a825'}
+};
+
+var CAL_ICONS = {
+  paricion:'🐄', monta:'🐂', suplemento:'🌾', sanidad:'💉',
+  forraje:'🌱', venta:'💰', mantenimiento:'🔧', administrativo:'📋', otro:'⭐'
+};
+
+var CAL_YEAR = 2026;
+var calData = {};
+var calSelectedDate = null;
+
+// Cargar desde localStorage
+(function(){
+  try { var s = localStorage.getItem('rq-cal-v2'); if(s) calData = JSON.parse(s); } catch(e){}
+})();
+
+function calSave(){
+  try { localStorage.setItem('rq-cal-v2', JSON.stringify(calData)); } catch(e){}
+}
+
+// Sugerencias pre-cargadas para el año ganadero en NL
+var CAL_SUGERENCIAS = [
+  // ---- MONTA (toros con vacas Jul–Sep para Brangus) ----
+  {date:'2026-07-01', type:'monta',      title:'Inicio época de monta',      desc:'Introducir toros. Relación 1:25 vacas. Revisar condición corporal (CC ≥ 2.5)', qty:'6 toros'},
+  {date:'2026-09-15', type:'monta',      title:'Fin de monta — retirar toros',desc:'Separar toros de las vacas. Diagnóstico de gestación en 45 días.', qty:''},
+  // ---- DIAGNÓSTICO DE GESTACIÓN ----
+  {date:'2026-10-30', type:'sanidad',    title:'Diagnóstico de gestación (DG)',desc:'Palpar o ultrasonido a todas las vacas. Identificar vacías → candidatas descarte.', qty:'147 vacas'},
+  // ---- PARICIONES (9 meses después de monta: Abr–Jun) ----
+  {date:'2026-04-01', type:'paricion',   title:'Inicio esperado de pariciones',desc:'Monitoreo 3× al día. Vacas en "cuadro de maternidad". Registrar fecha/sexo/ID de cada becerro.', qty:'~95 partos'},
+  {date:'2026-06-15', type:'paricion',   title:'Fin esperado de pariciones',   desc:'Meta: ≥65% parición (96+ becerros vivos sobre 147 vacas). Contar y registrar.', qty:''},
+  // ---- DESTETE ----
+  {date:'2026-11-01', type:'paricion',   title:'Destete becerros (6–7 meses)', desc:'Separar becerros de vacas. Pesar becerros. Iniciar levante o venta.', qty:'~95 becerros'},
+  // ---- VENTA BECERROS ----
+  {date:'2026-11-15', type:'venta',      title:'Venta de becerros machos',     desc:'Objetivo: ≥42 kg promedio. Precio meta ≥$80/kg. Mínimo 3 compradores.', qty:'~48 machos'},
+  {date:'2026-12-01', type:'venta',      title:'Venta de becerras de descarte', desc:'Hembras sobrantes de selección. Retener las mejores como reemplazo.', qty:'~25 hembras'},
+  // ---- SUPLEMENTO PROTEICO (temporada seca NL: Nov–May) ----
+  {date:'2025-11-01', type:'suplemento', title:'Inicio suplemento proteico',   desc:'100–150 g/vaca/día de urea o harina de soya. Ajustar según lluvia.', qty:'100–150g/cab/día'},
+  {date:'2026-05-15', type:'suplemento', title:'Fin suplemento proteico',      desc:'Lluvias iniciales → pastos con proteína suficiente. Evaluar antes de suspender.', qty:''},
+  {date:'2026-11-01', type:'suplemento', title:'Inicio suplemento proteico (2do ciclo)',desc:'Reinicio de temporada seca 2026–2027.', qty:'100–150g/cab/día'},
+  // ---- MINERAL TODO EL AÑO ----
+  {date:'2026-01-01', type:'suplemento', title:'Revisión sales minerales',     desc:'Chequear consumo mensual. 30–40g/cab/día mezcla mineral específica NL.', qty:'30–40g/cab/día'},
+  {date:'2026-07-01', type:'suplemento', title:'Revisión sales minerales (2do semestre)',desc:'Ajustar fórmula mineral según análisis de forraje si se tiene.', qty:'30–40g/cab/día'},
+  // ---- SANIDAD 1er SEMESTRE ----
+  {date:'2026-02-15', type:'sanidad',    title:'Vacunación 1er semestre',      desc:'Todo el hato: Clostridiales (7-way), DVB, IBR, Leptospira, Hemoglobinuria. Desparasitar si aplica.', qty:'156 cab'},
+  {date:'2026-02-20', type:'sanidad',    title:'Aplicar ivermectina',          desc:'Desparasitación + garrapaticida. Todo el hato antes de primavera.', qty:'156 cab'},
+  // ---- SANIDAD 2do SEMESTRE ----
+  {date:'2026-08-15', type:'sanidad',    title:'Vacunación 2do semestre',      desc:'Refuerzo clostridiales. Vacuna ectásica, Rabies si aplica en zona.', qty:'156 cab'},
+  {date:'2026-08-20', type:'sanidad',    title:'Control de garrapata',         desc:'Baño o aspersión con acaricida. Revisar resistencias. Rotar principio activo.', qty:''},
+  // ---- FORRAJE / RIEGO ----
+  {date:'2026-03-01', type:'forraje',    title:'Siembra de sorgo forrajero (riego)',desc:'87 Ha disponibles. Meta: 20–30 ton/Ha. Preparar suelo en febrero.', qty:'50–60 Ha'},
+  {date:'2026-03-15', type:'forraje',    title:'Siembra de maíz forrajero',    desc:'Lotes con mejor suelo. Densidad 65,000–70,000 plantas/Ha.', qty:'20–30 Ha'},
+  {date:'2026-06-15', type:'forraje',    title:'1a cosecha sorgo forrajero',   desc:'Cortar a 50% floración. Ensilar o henificar. Registrar toneladas.', qty:''},
+  {date:'2026-09-01', type:'forraje',    title:'Siembra de avena forrajera (riego)',desc:'Octubre–febrero. Aliviar presión de pastizal nativo en época seca.', qty:'30–40 Ha'},
+  {date:'2026-10-01', type:'forraje',    title:'Inicio pastoreo planeado',     desc:'Dividir agostadero en potreros. Rotación mínima 21 días descanso. Ver Plan R4P.', qty:'2,000 Ha'},
+  // ---- ADMINISTRATIVO / R4N ----
+  {date:'2026-01-15', type:'administrativo', title:'Entrega de cierre fiscal 2025',desc:'R4Numbers. Declaración anual ISR. Estados financieros auditados.', qty:''},
+  {date:'2026-03-31', type:'administrativo', title:'Cierre 1er trimestre R4N',desc:'Revisar P&L vs presupuesto. Ajustar plan si necesario.', qty:''},
+  {date:'2026-06-30', type:'administrativo', title:'Cierre 2do trimestre R4N', desc:'Revisión semestral con Fausto. Evaluar indicadores R4P.', qty:''},
+  {date:'2026-09-30', type:'administrativo', title:'Cierre 3er trimestre R4N', desc:'Preparar para destete y venta de becerros.', qty:''},
+  {date:'2026-12-31', type:'administrativo', title:'Cierre anual R4N',         desc:'Estados financieros 2026. Cálculo ROA. Presentación a Javier.', qty:''},
+  {date:'2026-07-17', type:'administrativo', title:'Declaración ISR 2do trimestre',desc:'DIOT y entero provisional. Fecha límite Julio 17.', qty:''},
+];
+
+function calLoadSugerencias(){
+  CAL_SUGERENCIAS.forEach(function(s){
+    if(!calData[s.date]) calData[s.date] = [];
+    var exists = calData[s.date].some(function(e){ return e.title===s.title; });
+    if(!exists) calData[s.date].push({type:s.type, title:s.title, desc:s.desc||'', qty:s.qty||''});
+  });
+  calSave();
+}
+
+function calResetSugerencias(){
+  if(!confirm('¿Restaurar las actividades sugeridas R4P? Se agregarán a los días que ya tengas sin borrar los que hayas creado tú.')) return;
+  calLoadSugerencias();
+  calRender();
+}
+
+function calChangeYear(delta){
+  CAL_YEAR += delta;
+  calRender();
+}
+
+var MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+var DAYS_ES   = ['L','M','M','J','V','S','D'];
+
+function calRender(){
+  document.getElementById('cal-year-label').textContent = CAL_YEAR;
+  var grid = document.getElementById('cal-grid');
+  if(!grid) return;
+  var html = '';
+  for(var m=0; m<12; m++){
+    html += calRenderMonth(CAL_YEAR, m);
+  }
+  grid.innerHTML = html;
+}
+
+function calRenderMonth(year, month){
+  var firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+  // Convert to Mon=0
+  var startOffset = (firstDay===0) ? 6 : firstDay-1;
+  var daysInMonth = new Date(year, month+1, 0).getDate();
+
+  var today = new Date();
+  var todayKey = today.getFullYear()+'-'+pad2(today.getMonth()+1)+'-'+pad2(today.getDate());
+
+  var h = '<div style="background:#fff;border:1px solid #d0d0d0;border-radius:6px;overflow:hidden">';
+  h += '<div style="background:#1F4E79;color:#fff;padding:7px 10px;font-weight:700;font-size:13px;text-align:center">'+MONTHS_ES[month]+' '+year+'</div>';
+  h += '<div style="padding:6px">';
+
+  // Days header
+  h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:3px">';
+  DAYS_ES.forEach(function(d,i){
+    h += '<div style="text-align:center;font-size:9px;font-weight:700;color:'+(i>=5?'#e24b4a':'#888')+';padding:2px 0">'+d+'</div>';
+  });
+  h += '</div>';
+
+  // Day cells
+  h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px">';
+
+  // Empty cells before first day
+  for(var e=0; e<startOffset; e++){
+    h += '<div style="height:26px"></div>';
+  }
+
+  for(var d=1; d<=daysInMonth; d++){
+    var key = year+'-'+pad2(month+1)+'-'+pad2(d);
+    var events = calData[key] || [];
+    var dow = (startOffset + d - 1) % 7; // 0=Mon, 6=Sun
+    var isWeekend = (dow===5||dow===6);
+    var isToday = (key===todayKey);
+
+    var dots = '';
+    var seen = {};
+    events.forEach(function(ev){
+      if(!seen[ev.type]){
+        seen[ev.type] = true;
+        dots += '<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:'+(CAL_COLORS[ev.type]||CAL_COLORS.otro).dot+';margin:0 1px"></span>';
+      }
+    });
+
+    var bgStyle = isToday ? 'background:#fff3e0;' : (events.length>0?'background:#f8f9ff;':'');
+    var borderStyle = isToday ? 'border:1px solid #f57c00;' : (events.length>0?'border:1px solid #c5cae9;':'border:1px solid transparent;');
+    var numColor = isWeekend ? '#e24b4a' : '#333';
+    if(isToday) numColor = '#e65100';
+
+    h += '<div onclick="calOpenDay(\''+key+'\')" style="cursor:pointer;border-radius:3px;padding:2px;text-align:center;min-height:26px;'+bgStyle+borderStyle+'" title="'+key+'">';
+    h += '<div style="font-size:10px;font-weight:'+(isToday?'700':'500')+';color:'+numColor+'">'+d+'</div>';
+    if(dots) h += '<div style="display:flex;justify-content:center;flex-wrap:wrap;gap:1px;margin-top:1px">'+dots+'</div>';
+    h += '</div>';
+  }
+  h += '</div></div></div>';
+  return h;
+}
+
+function pad2(n){ return n<10?'0'+n:''+n; }
+
+function calOpenDay(dateKey){
+  calSelectedDate = dateKey;
+  var parts = dateKey.split('-');
+  var d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+  var dow = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][d.getDay()];
+  document.getElementById('cal-modal-title').textContent = dow+', '+parseInt(parts[2])+' de '+MONTHS_ES[parseInt(parts[1])-1]+' de '+parts[0];
+  calRenderModalEvents();
+  document.getElementById('cal-modal-bg').style.display = 'flex';
+  document.getElementById('cal-new-title').value = '';
+  document.getElementById('cal-new-desc').value = '';
+  document.getElementById('cal-new-qty').value = '';
+}
+
+function calRenderModalEvents(){
+  var events = calData[calSelectedDate] || [];
+  var el = document.getElementById('cal-modal-events');
+  if(events.length===0){
+    el.innerHTML = '<p style="color:#888;font-size:12px;font-style:italic">No hay eventos para este día.</p>';
+    return;
+  }
+  var h = '';
+  events.forEach(function(ev, idx){
+    var c = CAL_COLORS[ev.type] || CAL_COLORS.otro;
+    var icon = CAL_ICONS[ev.type] || '⭐';
+    h += '<div style="background:'+c.bg+';color:'+c.label+';border-radius:5px;padding:8px 10px;margin-bottom:6px;position:relative">';
+    h += '<div style="font-weight:700;font-size:12px">'+icon+' '+escHtml(ev.title)+'</div>';
+    if(ev.qty) h += '<div style="font-size:11px;opacity:.85;margin-top:2px">📦 '+escHtml(ev.qty)+'</div>';
+    if(ev.desc) h += '<div style="font-size:11px;opacity:.85;margin-top:3px">'+escHtml(ev.desc)+'</div>';
+    h += '<button onclick="calDeleteEvent('+idx+')" style="position:absolute;top:6px;right:8px;background:rgba(255,255,255,.25);border:none;color:#fff;cursor:pointer;border-radius:3px;padding:1px 6px;font-size:11px">✕</button>';
+    h += '</div>';
+  });
+  el.innerHTML = h;
+}
+
+function calDeleteEvent(idx){
+  if(!confirm('¿Eliminar este evento?')) return;
+  if(!calData[calSelectedDate]) return;
+  calData[calSelectedDate].splice(idx,1);
+  if(calData[calSelectedDate].length===0) delete calData[calSelectedDate];
+  calSave();
+  calRenderModalEvents();
+  calRender();
+}
+
+function calAddEvent(){
+  var title = document.getElementById('cal-new-title').value.trim();
+  if(!title){ alert('Escribe un título para el evento.'); return; }
+  var type = document.getElementById('cal-new-type').value;
+  var qty  = document.getElementById('cal-new-qty').value.trim();
+  var desc = document.getElementById('cal-new-desc').value.trim();
+  if(!calData[calSelectedDate]) calData[calSelectedDate] = [];
+  calData[calSelectedDate].push({type:type, title:title, qty:qty, desc:desc});
+  calSave();
+  document.getElementById('cal-new-title').value = '';
+  document.getElementById('cal-new-desc').value = '';
+  document.getElementById('cal-new-qty').value = '';
+  calRenderModalEvents();
+  calRender();
+}
+
+function calCloseModal(){
+  document.getElementById('cal-modal-bg').style.display = 'none';
+}
+
+document.getElementById('cal-modal-bg').addEventListener('click', function(e){
+  if(e.target===this) calCloseModal();
+});
+
+function escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Aplicar estilos a leyenda
+document.querySelectorAll('.cal-leg').forEach(function(el){
+  var type = el.getAttribute('data-type');
+  var c = CAL_COLORS[type] || CAL_COLORS.otro;
+  el.style.cssText = 'background:'+c.bg+';color:'+c.label+';padding:3px 9px;border-radius:10px;font-size:11px;font-weight:600;cursor:default';
+});
+
+// Cargar sugerencias la primera vez
+if(Object.keys(calData).length===0) calLoadSugerencias();
+
+// Render inicial del calendario
+calRender();
 </script>
 
 </body>
